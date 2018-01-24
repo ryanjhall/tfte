@@ -124,15 +124,15 @@ resource "azurerm_availability_set" "armav" {
 
 # VIRTUAL MACHINE
 resource "azurerm_virtual_machine" "armvm" {
-    count                 = "${var.count}"
-    name                  = "${var.vmprefix}${count.index}"
-    location              = "${var.location}"
-    resource_group_name   = "${azurerm_resource_group.armrg.name}"
-    network_interface_ids = ["${element(azurerm_network_interface.armnic.*.id, count.index)}"]
-    availability_set_id   = "${azurerm_availability_set.armav.id}"
-    vm_size               = "${var.vmsize}"
-    delete_os_disk_on_termination = true
-    delete_data_disks_on_termination = true
+    count                               = "${var.count}"
+    name                                = "${var.vmprefix}${count.index}"
+    location                            = "${var.location}"
+    resource_group_name                 = "${azurerm_resource_group.armrg.name}"
+    network_interface_ids               = ["${element(azurerm_network_interface.armnic.*.id, count.index)}"]
+    availability_set_id                 = "${azurerm_availability_set.armav.id}"
+    vm_size                             = "${var.vmsize}"
+    delete_os_disk_on_termination       = true
+    delete_data_disks_on_termination    = true
 
     storage_os_disk {
         name              = "${var.vmprefix}${count.index}-osdisk"
@@ -170,29 +170,34 @@ resource "azurerm_virtual_machine" "armvm" {
 
 # AZURE VM EXTENSION LINUX CUSTOM SCRIPT
 resource "azurerm_virtual_machine_extension" "armext" {
-  name                 = "Consul Installation Script"
-  location             = "${var.location}"
-  resource_group_name  = "${azurerm_resource_group.armrg.name}"
-  virtual_machine_name = "${var.vmprefix}${count.index}"
-  publisher            = "Microsoft.OSTCExtensions"
-  type                 = "CustomScriptForLinux"
-  type_handler_version = "1.2"
+    name                 = "LinuxScriptExtension"
+    location             = "${var.location}"
+    resource_group_name  = "${azurerm_resource_group.armrg.name}"
+    virtual_machine_name = "${var.vmprefix}${count.index}"
+    publisher            = "Microsoft.Azure.Extensions"
+    type                 = "CustomScript"
+    type_handler_version = "2.0"
+    depends_on           = ["azurerm_virtual_machine.armvm"]
 
-  settings = <<SETTINGS
+    settings = <<SETTINGS
     {
-        "commandToExecute": "sh consul.sh ${var.count}",
-        "fileUris": ["https://github.com/ryanjhall/tfte/blob/master/scripts/consul.sh"]
+        "commandToExecute": "sudo sh ./consul.sh ${var.count} ${element(azurerm_network_interface.armnic.*.private_ip_address, 0)} ${var.version}",
+        "fileUris": ["https://raw.githubusercontent.com/ryanjhall/tfte/master/scripts/consul.sh"]
     }
-SETTINGS
+    SETTINGS
 
-  tags {
-    environment = "Production"
-  }
+    tags {
+        environment = "${var.environment}"
+    }
 }
 
-
+# OUTPUTS
 output "public_ip" {
     value = "${azurerm_public_ip.armpip.*.id}"
+}
+
+output "private_ip" {
+    value = "${element(azurerm_network_interface.armnic.*.private_ip_address, 0)}"
 }
 
 output "module_path" {
