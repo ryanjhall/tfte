@@ -18,3 +18,10 @@ sudo mkdir -p /opt/consul/data
  # CONFIGURE CONSUL
 #
 sudo /usr/local/bin/consul agent -server -bootstrap-expect=$1 -retry-join=$2 -data-dir=/opt/consul/data -ui
+
+#
+ # CONFIGURE IP TABLES
+#
+exit 0
+
+
