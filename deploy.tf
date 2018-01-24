@@ -165,6 +165,7 @@ resource "azurerm_virtual_machine" "armvm" {
 
     tags {
         environment = "${var.environment}"
+        application = "Consul Server"
     }
 }
 
@@ -181,7 +182,7 @@ resource "azurerm_virtual_machine_extension" "armext" {
 
     settings = <<SETTINGS
     {
-        "commandToExecute": "sudo sh ./consul.sh ${var.count} ${element(azurerm_network_interface.armnic.*.private_ip_address, 0)} ${var.version}",
+        "commandToExecute": "sudo sh ./consul.sh ${var.count} ${element(azurerm_network_interface.armnic.*.private_ip_address, 0)}",
         "fileUris": ["https://raw.githubusercontent.com/ryanjhall/tfte/master/scripts/consul.sh"]
     }
     SETTINGS
